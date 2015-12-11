@@ -7,6 +7,21 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+// Resources used to learn how to send emails in java
+//
+// How to send an email in java:
+//     http://www.tutorialspoint.com/java/java_sending_email.htm
+//
+// Hmmm, running my own SMTP server seems like needless hassle (and another service
+// dependency I have to deploy and maintain.) I'll bet I can auth with google and use
+// their mail servers to do the sending... Yup.
+//     http://programmers.stackexchange.com/questions/229272/sending-e-mails-without-using-an-e-mail-server
+//
+// Well that didn't work, messaging errors, and it's an old tutorial... I wonder if
+// google has changed their auth and wants SSL or something better now... Yup. Ok, new
+// example from here:
+//     http://www.mkyong.com/java/javamail-api-sending-email-via-gmail-smtp-example/
+
 public class Mailer {
 
     private Session session;
@@ -30,6 +45,7 @@ public class Mailer {
                 });
     }
 
+    // Will need to parameterize this a bit later
     public void SendMail() {
         try {
 
@@ -46,6 +62,10 @@ public class Mailer {
             System.out.println("Done");
 
         } catch (MessagingException e) {
+            // Need better error handling here; I wonder what level of information
+            // we have here? Has this waited for the response from the mail server?
+            // Does it include failed delivery information? That would be really
+            // handy if it did.
             throw new RuntimeException(e);
         }
     }

@@ -1,28 +1,29 @@
 import junit.framework.Assert;
 import org.junit.Test;
 
-public class TaskConsumerTest {
+import java.io.IOException;
 
+public class TaskConsumerTest {
+//
 //    @Test
 //    public void TestSendEmail()
 //    {
-//        TaskConsumer consumer = new TaskConsumer();
-//        consumer.setMailServerProperties();
-//        try
-//        {
-//            consumer.sendEmail();
-//        }
-//        catch (Exception ex)
-//        {
-//            System.out.println(ex.toString());
-//            assert false;
-//        }
+//        Mailer mailer = new Mailer();
+//        mailer.SendMail();
 //    }
 
     @Test
-    public void TestSendEmail()
+    public void TestFetchWebsite()
     {
-        Mailer mailer = new Mailer();
-        mailer.SendMail();
+        TaskConsumer taskConsumer = new TaskConsumer();
+        try
+        {
+            String content = taskConsumer.FetchContent("https://www.wikipedia.org/");
+            assert(content != null);
+        }
+        catch (IOException ex)
+        {
+            assert(false);
+        }
     }
 }
