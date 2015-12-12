@@ -8,8 +8,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-// A webserver that implements a single POST endpoint; watch_and_notify
-public class webserver {
+// A WebServer that implements a single POST endpoint; watch_and_notify
+public class WebServer {
 
     private Mailer mailer;
 
@@ -59,5 +59,12 @@ public class webserver {
         String successSubject = String.format("Watch registered");
         String successMessage = String.format("Successfully registered a watch on website %1", websiteUrl);
         mailer.SendMail(listenerEmail, successSubject, successMessage);
+
+        // The website exists and is accessible, the email of the listener is good;
+        // let's schedule the actual task now.
+        Task task = new Task();
+        task.LastContentHash = contentHash;
+        task.ListenerEmail = listenerEmail;
+        task.WebsiteeUrl = websiteUrl;
     }
 }
