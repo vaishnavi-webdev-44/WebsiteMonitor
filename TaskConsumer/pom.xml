@@ -11,8 +11,6 @@
 
     <artifactId>TaskConsumer</artifactId>
 
-
-
     <build>
         <pluginManagement>
             <plugins>
