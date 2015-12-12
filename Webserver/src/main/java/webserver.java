@@ -11,6 +11,8 @@ import com.sun.net.httpserver.HttpServer;
 // A webserver that implements a single POST endpoint; watch_and_notify
 public class webserver {
 
+    private Mailer mailer;
+
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/watch_and_notify", new MyHandler());
@@ -30,8 +32,32 @@ public class webserver {
         }
     }
 
-    public void PostTask()
+    public void PostTask(String listenerEmail, String websiteUrl)
     {
+        // Fetch the website: we want the original content hash, and we want to
+        // verify the site is actually reachable.
+        int contentHash;
+        try
+        {
+            String content = WebsiteFetcher.FetchContent(websiteUrl);
+            contentHash = content.hashCode();
+        }
+        catch (IOException ex)
+        {
+            // If the website was unreachable for any reason we'll inform the caller
+            // of the failure and not schedule the task. We only want to monitor valid
+            // websites.
+            String errorSubject = "Could not monitor website";
+            String errorMessage =
+                    String.format("We were unable to create a watch on website %1 as we received error %2",
+                    listenerEmail, ex.toString());
+            mailer.SendMail(listenerEmail, errorSubject, errorMessage);
+            return;
+        }
 
+        // Send an email: we want to verify the email address is actually valid.
+        String successSubject = String.format("Watch registered");
+        String successMessage = String.format("Successfully registered a watch on website %1", websiteUrl);
+        mailer.SendMail(listenerEmail, successSubject, successMessage);
     }
 }

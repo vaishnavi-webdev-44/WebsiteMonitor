@@ -12,18 +12,5 @@ public class TaskConsumerTest {
 //        mailer.SendMail();
 //    }
 
-    @Test
-    public void TestFetchWebsite()
-    {
-        TaskConsumer taskConsumer = new TaskConsumer();
-        try
-        {
-            String content = taskConsumer.FetchContent("https://www.wikipedia.org/");
-            assert(content != null);
-        }
-        catch (IOException ex)
-        {
-            assert(false);
-        }
-    }
+
 }

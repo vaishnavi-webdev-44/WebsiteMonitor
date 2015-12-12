@@ -46,21 +46,17 @@ public class Mailer {
     }
 
     // Will need to parameterize this a bit later
-    public void SendMail() {
+    public void SendMail(String email, String subject, String content) {
         try {
 
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress("coding.challenge.2015@gmail.com"));
+            message.setFrom(new InternetAddress(email));
             message.setRecipients(Message.RecipientType.TO,
-                    InternetAddress.parse("coding.challenge.2015@gmail.com"));
-            message.setSubject("Testing Subject");
-            message.setText("Dear Mail Crawler," +
-                    "\n\n No spam to my email, please!");
+                    InternetAddress.parse(email));
+            message.setSubject(subject);
+            message.setText(content);
 
             Transport.send(message);
-
-            System.out.println("Done");
-
         } catch (MessagingException e) {
             // Need better error handling here; I wonder what level of information
             // we have here? Has this waited for the response from the mail server?
