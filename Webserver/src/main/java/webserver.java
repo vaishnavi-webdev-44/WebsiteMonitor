@@ -4,16 +4,36 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
+import com.google.gson.Gson;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.Channel;
+
 // A WebServer that implements a single POST endpoint; watch_and_notify
 public class WebServer {
 
-    private Mailer mailer;
+    private static String QUEUE_NAME = "TEST_CHANNEL";
 
-    public static void main(String[] args) throws Exception {
+    private Mailer mailer = new Mailer();
+    private Channel rabbitChannel;
+
+    public WebServer()
+    {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+        Connection connection = factory.newConnection();
+        rabbitChannel = connection.createChannel();
+        rabbitChannel.queueDeclare(QUEUE_NAME, false, false, false, null);
+
+    }
+
+    public void StartServer()
+    {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/watch_and_notify", new MyHandler());
         server.setExecutor(null); // creates a default executor
@@ -66,5 +86,19 @@ public class WebServer {
         task.LastContentHash = contentHash;
         task.ListenerEmail = listenerEmail;
         task.WebsiteeUrl = websiteUrl;
+    }
+
+    private void EnqueueTask(Task task)
+    {
+        Gson gson = new Gson();
+        String taskAsJson = gson.toJson(task);
+        try {
+            rabbitChannel.basicPublish("", QUEUE_NAME, null, taskAsJson.getBytes());
+        }
+        catch (IOException ex)
+        {
+            System.out.print("Wut?");
+        }
+        System.out.println(" Message sent");
     }
 }
