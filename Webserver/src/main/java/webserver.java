@@ -3,6 +3,7 @@
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeoutException;
 
 import com.google.gson.Gson;
 
@@ -17,26 +18,29 @@ import com.rabbitmq.client.Channel;
 // A WebServer that implements a single POST endpoint; watch_and_notify
 public class WebServer {
 
-    private static String QUEUE_NAME = "TEST_CHANNEL";
-
-    private Mailer mailer = new Mailer();
+    private Mailer mailer;
     private Channel rabbitChannel;
+    private String rabbitQueueName;
+    private HttpServer server;
 
-    public WebServer()
+    public WebServer(Config config) throws IOException, TimeoutException
     {
+        mailer = new Mailer();
+
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost(config.RabbitHostName);
         Connection connection = factory.newConnection();
         rabbitChannel = connection.createChannel();
-        rabbitChannel.queueDeclare(QUEUE_NAME, false, false, false, null);
+        rabbitChannel.queueDeclare(config.QueueName, false, false, false, null);
+        rabbitQueueName = config.QueueName;
 
+        server = HttpServer.create(new InetSocketAddress(8000), 0);
+        server.createContext("/watch_and_notify", new MyHandler());
+        server.setExecutor(null); // creates a default executor
     }
 
     public void StartServer()
     {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.createContext("/watch_and_notify", new MyHandler());
-        server.setExecutor(null); // creates a default executor
         server.start();
     }
 
@@ -93,7 +97,7 @@ public class WebServer {
         Gson gson = new Gson();
         String taskAsJson = gson.toJson(task);
         try {
-            rabbitChannel.basicPublish("", QUEUE_NAME, null, taskAsJson.getBytes());
+            rabbitChannel.basicPublish("", rabbitQueueName, null, taskAsJson.getBytes());
         }
         catch (IOException ex)
         {
