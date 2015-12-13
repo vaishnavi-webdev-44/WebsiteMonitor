@@ -21,6 +21,8 @@ public class WebServerTest {
         Config config = new Config();
         config.RabbitHostName = "localhost";
         config.QueueName = "TEST_QUEUE";
+        config.MailerEmail = "coding.challenge.2015@gmail.com";
+        config.MailerPassword = "thisisasimplepassword";
 
         webServer = new WebServer(config);
     }

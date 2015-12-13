@@ -1,0 +1,6 @@
+{
+  "RabbitHostName" : "localhost",
+  "QueueName" : "TEST_QUEUE",
+  "MailerEmail" : "coding.challenge.2015@gmail.com",
+  "MailerPassword" : "thisisasimplepassword"
+}

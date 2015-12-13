@@ -28,7 +28,7 @@ public class Mailer {
 
     private Session session;
 
-    public Mailer() {
+    public Mailer(final String mailerEmail, final String mailerPassword) {
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.socketFactory.port", "465");
@@ -42,7 +42,7 @@ public class Mailer {
         session = Session.getDefaultInstance(props,
                 new javax.mail.Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication("coding.challenge.2015@gmail.com","thisisasimplepassword");
+                        return new PasswordAuthentication(mailerEmail, mailerPassword);
                     }
                 });
     }

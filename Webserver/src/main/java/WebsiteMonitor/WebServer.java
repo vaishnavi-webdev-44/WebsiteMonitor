@@ -27,7 +27,7 @@ public class WebServer {
 
     public WebServer(Config config) throws IOException, TimeoutException
     {
-        mailer = new Mailer();
+        mailer = new Mailer(config.MailerEmail, config.MailerPassword);
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(config.RabbitHostName);
