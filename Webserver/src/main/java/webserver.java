@@ -92,7 +92,7 @@ public class WebServer {
         task.WebsiteeUrl = websiteUrl;
     }
 
-    private void EnqueueTask(Task task)
+    public void EnqueueTask(Task task)
     {
         Gson gson = new Gson();
         String taskAsJson = gson.toJson(task);
