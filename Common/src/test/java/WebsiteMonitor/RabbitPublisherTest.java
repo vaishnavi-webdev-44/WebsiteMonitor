@@ -1,5 +1,9 @@
 package WebsiteMonitor;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +26,25 @@ public class RabbitPublisherTest {
         task.LastContentHash = 1;
         task.ListenerEmail = "foo@foo.com";
         task.WebsiteeUrl = "somewhere";
-        rabbitPublisher.EnqueueTask(task);
+        try
+        {
+            rabbitPublisher.EnqueueTask(task, 0);
+            Consumer consumer = new DefaultConsumer(channel) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
+                        throws IOException {
+                    String message = new String(body, "UTF-8");
+                    System.out.println(" [x] Received '" + message + "'");
+                }
+            };
+            rabbitPublisher.ConsumeMessages();
+        }
+        catch (Exception ex)
+        {
+            assert false;
+        }
+
+
     }
 
     @Test
