@@ -47,7 +47,8 @@ public class WebServer {
     }
 
     static class MyHandler implements HttpHandler {
-        @Override
+        // Override taken from code sample, intellij claims it's not allowed. Ok.
+//        @Override
         public void handle(HttpExchange t) throws IOException {
             // Need to validate the request is a POST. That's the only verb we accept.
             String response = "This is the response";

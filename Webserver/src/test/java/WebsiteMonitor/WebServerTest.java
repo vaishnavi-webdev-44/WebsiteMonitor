@@ -8,6 +8,13 @@ import java.util.concurrent.TimeoutException;
 
 public class WebServerTest {
 
+    private WebServer webServer;
+
+    // Every test needs the webServer up and bound to RabbitMQ
+    // This implicitly tests that RabbitMQ connection can be established
+    // Although it's not great that it's outside of a @Test method, but
+    // I don't really want to repeat this code in every test... sure I could
+    // make it a function...
     @Before
     public void Initialize() throws IOException, TimeoutException
     {
@@ -15,7 +22,6 @@ public class WebServerTest {
         config.RabbitHostName = "localhost";
         config.QueueName = "TEST_QUEUE";
 
-        WebServer webServer;
         webServer = new WebServer(config);
     }
 
@@ -36,8 +42,7 @@ public class WebServerTest {
         task.ListenerEmail = "email";
         task.LastContentHash = 42;
 
-//        WebServer webServer;
-//        webServer.EnqueueTask(task);
+        webServer.EnqueueTask(task);
     }
 
     // Test that we if we attempt to register a watch on a website that does
