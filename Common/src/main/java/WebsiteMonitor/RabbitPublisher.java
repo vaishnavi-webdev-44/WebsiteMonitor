@@ -10,8 +10,10 @@ import com.rabbitmq.client.*;
 
 public class RabbitPublisher {
 
-    private Channel rabbitChannel;
+    public Channel rabbitChannel;
     private String rabbitQueueName;
+
+    public String RabbitQueueName() { return rabbitQueueName; }
 
     // The following method uses the RabbitMQ tutorials for code snippets.
     // https://www.rabbitmq.com/tutorials/tutorial-one-java.html
@@ -48,15 +50,5 @@ public class RabbitPublisher {
         props.headers(headers);
 
         rabbitChannel.basicPublish("my-exchange", "", props.build(), taskAsJson.getBytes());
-    }
-
-    public void ConsumeMessages(DefaultConsumer consumer) throws IOException {
-        rabbitChannel.basicConsume(rabbitQueueName, true, consumer);
-    }
-
-    // The ConsumeMessages method blocks indefinitely. Aborting will interupt this.
-    // This is needed from testing; we can block for 1 message, then abort.
-    public void Abort() throws IOException {
-        rabbitChannel.abort();
     }
 }
