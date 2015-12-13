@@ -14,44 +14,37 @@ public class RabbitPublisherTest {
     private static int bufferedMessages = 0;
 
     @Test
-    public void TestDelayedPublishAndReceive()
-    {
+    public void TestDelayedPublishAndReceive() throws IOException, TimeoutException, InterruptedException {
         bufferedMessages = 0;
         final long startTimeMs = System.currentTimeMillis();
+        final long delayMs = 100;
 
         Task task = new Task();
         task.LastContentHash = 1;
         task.ListenerEmail = "foo@foo.com";
         task.WebsiteeUrl = "somewhere";
-        try {
-            RabbitPublisher rabbitPublisher = new RabbitPublisher("localhost", "TEST_QUEUE");
-            rabbitPublisher.EnqueueTask(task, 0);
-            ++bufferedMessages;
-            Consumer consumer = new DefaultConsumer(rabbitPublisher.rabbitChannel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
-                        throws IOException {
-                    --bufferedMessages;
-                }
-            };
-            rabbitPublisher.rabbitChannel.basicConsume(
-                    rabbitPublisher.RabbitQueueName(), true, consumer);
-            while (bufferedMessages != 0)
-            {
-                if (System.currentTimeMillis() > startTimeMs + 5000)
-                {
-                    throw new TimeoutException("Message should have been consumed by now");
-                }
-                Thread.sleep(100);
+
+        RabbitPublisher rabbitPublisher = new RabbitPublisher("localhost", "TEST_QUEUE");
+        rabbitPublisher.EnqueueTask(task, delayMs);
+        ++bufferedMessages;
+        Consumer consumer = new DefaultConsumer(rabbitPublisher.rabbitChannel) {
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
+                    throws IOException {
+                // Ensure the message was properly delayed
+                assert System.currentTimeMillis() >= startTimeMs + delayMs;
+                --bufferedMessages;
             }
-        } catch (Exception ex) {
-            assert false;
+        };
+        rabbitPublisher.rabbitChannel.basicConsume(
+                rabbitPublisher.RabbitQueueName(), true, consumer);
+        while (bufferedMessages != 0)
+        {
+            if (System.currentTimeMillis() > startTimeMs + 5000)
+            {
+                throw new TimeoutException("Message should have been consumed by now");
+            }
+            Thread.sleep(10);
         }
-    }
-
-    @Test
-    public void TestDelayedPublishReceive()
-    {
-
     }
 }

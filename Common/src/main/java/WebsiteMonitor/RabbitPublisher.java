@@ -39,7 +39,7 @@ public class RabbitPublisher {
         rabbitQueueName = queueName;
     }
 
-    public void EnqueueTask(Task task, int taskDelayMs) throws IOException {
+    public void EnqueueTask(Task task, long taskDelayMs) throws IOException {
         Gson gson = new Gson();
         String taskAsJson = gson.toJson(task);
 
