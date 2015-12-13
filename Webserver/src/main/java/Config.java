@@ -1,3 +1,5 @@
+package WebsiteMonitor;
+
 public class Config
 {
     public String RabbitHostName;

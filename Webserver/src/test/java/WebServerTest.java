@@ -1,3 +1,5 @@
+package WebsiteMonitor;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -6,16 +8,14 @@ import java.util.concurrent.TimeoutException;
 
 public class WebServerTest {
 
-//    private WebServer webServer;
-
     @Before
     public void Initialize() throws IOException, TimeoutException
     {
-        WebServer webServer;
         Config config = new Config();
         config.RabbitHostName = "localhost";
         config.QueueName = "TEST_QUEUE";
 
+        WebServer webServer;
         webServer = new WebServer(config);
     }
 
@@ -36,7 +36,8 @@ public class WebServerTest {
         task.ListenerEmail = "email";
         task.LastContentHash = 42;
 
-        webServer.EnqueueTask(task);
+//        WebServer webServer;
+//        webServer.EnqueueTask(task);
     }
 
     // Test that we if we attempt to register a watch on a website that does

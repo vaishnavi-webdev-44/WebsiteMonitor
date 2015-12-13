@@ -1,3 +1,5 @@
+package WebsiteMonitor;
+
 // Basic webserver example copied from
 // http://stackoverflow.com/questions/3732109/simple-http-server-in-java-using-only-java-se-api
 import java.io.IOException;

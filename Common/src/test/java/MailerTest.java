@@ -1,3 +1,5 @@
+package WebsiteMonitor;
+
 import org.junit.Test;
 
 public class MailerTest {

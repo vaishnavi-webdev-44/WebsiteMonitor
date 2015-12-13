@@ -1,3 +1,5 @@
+package WebsiteMonitor;
+
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
