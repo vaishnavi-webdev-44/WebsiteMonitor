@@ -7,7 +7,7 @@ import java.net.URL;
 
 // http://stackoverflow.com/questions/6068197/utils-read-resource-text-file-to-string-java
 
-public class EntryPoint {
+public class WebServerEntryPoint {
     public static void main(String[] args) throws Exception {
 
         URL url = Resources.getResource("config.json");

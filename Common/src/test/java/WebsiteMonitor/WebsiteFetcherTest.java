@@ -20,4 +20,6 @@ public class WebsiteFetcherTest {
             assert(false);
         }
     }
+
+    // Need some negative test cases; forbidden, unavailable, bad url
 }

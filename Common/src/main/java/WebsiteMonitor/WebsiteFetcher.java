@@ -9,6 +9,13 @@ import org.jsoup.nodes.Document;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
+// Resources used:
+//
+// How to fetch webpage content in java:
+//     http://stackoverflow.com/questions/238547/how-do-you-programmatically-download-a-webpage-in-java
+//
+//
+
 public class WebsiteFetcher
 {
         public static String FetchContent(String websiteUrl) throws IOException {
