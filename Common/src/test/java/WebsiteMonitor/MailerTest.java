@@ -11,12 +11,12 @@ public class MailerTest {
     //
     // At the very least it serves me in development as I can trigger an email
     // and check the inbox manually.
-    @Test
-    public void TestSendEmail()
-    {
-        Mailer mailer = new Mailer("coding.challenge.2015@gmail.com","thisisasimplepassword");
-        mailer.SendMail("coding.challenge.2015@gmail.com", "Test subject", "This is a test message");
-    }
+//    @Test
+//    public void TestSendEmail()
+//    {
+//        Mailer mailer = new Mailer("coding.challenge.2015@gmail.com","thisisasimplepassword");
+//        mailer.SendMail("coding.challenge.2015@gmail.com", "Test subject", "This is a test message");
+//    }
 
     // Need some negative tests for bad email address
 }

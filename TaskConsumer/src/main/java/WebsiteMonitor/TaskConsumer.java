@@ -12,12 +12,26 @@ public class TaskConsumer implements Consumer {
     private RabbitPublisher rabbitPublisher;
     private Gson gson = new Gson();
 
+    // For testing purposes we'll track if we've ever consumed any messages.
+    // This allows us to easily write tests that consume one message.
+    private static Boolean hasConsumedMessages = false;
+
     public TaskConsumer(Config config) throws IOException, TimeoutException {
         mailer = new Mailer(config.MailerEmail, config.MailerPassword);
         rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
     }
 
-    public void Run() throws IOException {
+    public void ConsumeOneMessage() throws IOException, InterruptedException {
+        hasConsumedMessages = false;
+        rabbitPublisher.rabbitChannel.basicConsume(
+                rabbitPublisher.RabbitQueueName(), true, this);
+        while (hasConsumedMessages == false)
+        {
+            Thread.sleep(100);
+        }
+    }
+
+    public void RunForever() throws IOException {
         rabbitPublisher.rabbitChannel.basicConsume(
                 rabbitPublisher.RabbitQueueName(), true, this);
         while (true)
@@ -44,7 +58,9 @@ public class TaskConsumer implements Consumer {
     public void handleRecoverOk(String s) { }
 
     public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-        Task task = gson.fromJson(body.toString(), Task.class);
+        String taskBytes = new String(body, "UTF-8");
+        Task task = gson.fromJson(taskBytes, Task.class);
+        System.out.println("Processing task" + taskBytes);
 
         // Set the current hash = last hash, so that if we fail to fetch the content
         // and we haven't hit TTL = 0, we treat this as no-change.
@@ -53,16 +69,18 @@ public class TaskConsumer implements Consumer {
         {
             String content = WebsiteFetcher.FetchContent(task.WebsiteeUrl);
             contentHash = content.hashCode();
+            System.out.println("Succesfully fetched website, content hash: " + contentHash);
             task.TimeToLive = 5;
         }
         catch (IOException ex)
         {
+            System.out.println("Failed to fetch site content, error" + ex);
             --task.TimeToLive;
             if (task.TimeToLive == 0)
             {
                 String errorSubject = "Website watch cancelled";
                 String errorMessage = String.format(
-                        "After repeated attempts we were unable to fetch content from %1. "
+                        "After repeated attempts we were unable to fetch content from %1$s. "
                         + "We have cancelled the monitoring of it. Please re-submit the job "
                         + "if the website is functioning again and you wish to resume the watch.",
                         task.WebsiteeUrl);
@@ -76,15 +94,18 @@ public class TaskConsumer implements Consumer {
 
         if (contentHash != task.LastContentHash)
         {
+            System.out.println("Change detected");
             String subject = "Website content has changed";
             String message = String.format(
-                    "Dear %1, we have detected a change in content of website %2.",
+                    "Dear %1$s, we have detected a change in content of website %2$s.",
                     task.ListenerEmail, task.WebsiteeUrl);
             mailer.SendMail(task.ListenerEmail, subject, message);
         }
 
         task.LastContentHash = contentHash;
         rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000);
+
+        hasConsumedMessages = true;
 
         // NOTE! There is a concerning race right here, after enqueue'ing the next iteration
         // of the monitor task and before the closing brace, where the function will end, rabbit

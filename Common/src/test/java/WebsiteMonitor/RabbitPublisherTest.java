@@ -1,5 +1,6 @@
 package WebsiteMonitor;
 
+import com.google.gson.Gson;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
@@ -33,7 +34,12 @@ public class RabbitPublisherTest {
                     throws IOException {
                 // Ensure the message was properly delayed
                 assert System.currentTimeMillis() >= startTimeMs + delayMs;
+                String message = new String(body, "UTF-8");
+                Gson gson = new Gson();
+                Task receivedTask = gson.fromJson(message, Task.class);
+                assert receivedTask.LastContentHash == 1;
                 --bufferedMessages;
+                System.out.println(body.toString());
             }
         };
         rabbitPublisher.rabbitChannel.basicConsume(
