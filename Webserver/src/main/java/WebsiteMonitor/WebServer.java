@@ -1,13 +1,12 @@
 package WebsiteMonitor;
 
-// Basic webserver example copied from
-// http://stackoverflow.com/questions/3732109/simple-http-server-in-java-using-only-java-se-api
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.log4j.Logger;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
@@ -18,16 +17,15 @@ import org.simpleframework.transport.Server;
 import org.simpleframework.transport.connect.Connection;
 import org.simpleframework.transport.connect.SocketConnection;
 
-
 // Reference:
 //     http://www.simpleframework.org/doc/tutorial/tutorial.php
-
 
 // A WebServer that implements a single POST endpoint; watch_and_notify
 public class WebServer implements Container {
 
     private Mailer mailer;
     private RabbitPublisher rabbitPublisher;
+    private Logger log = Logger.getLogger(this.getClass().getName());
 
     public WebServer(WebsiteMonitor.Config config)
             throws IOException, TimeoutException
@@ -52,7 +50,10 @@ public class WebServer implements Container {
         }
         catch (IOException ex)
         {
-            // log error, how does this happen?
+            // The conditions under which this throws IOException aren't well specified
+            // in the SimpleFramework documentation. Nothing to do but log and drop
+            // the request.
+            log.warn("Received IOException while getting response printStream. Exception" + ex);
             return;
         }
 
@@ -65,11 +66,13 @@ public class WebServer implements Container {
         response.setDate("Date", time);
         response.setDate("Last-Modified", time);
 
+        // TODO: easy way to find the HTTP verb from the request? We only support post.
+
         // We only have one endpoint; normally we'd have a map of handlers, and
         // no handler in the map would return forbidden.
         if (!request.getPath().toString().equals("/monitor"))
         {
-            System.out.println("Forbidden, path was " + request.getPath().toString());
+            log.info("Attempted access on unsupported path " + request.getPath().toString());
             response.setStatus(Status.FORBIDDEN);
             body.close();
             return;
@@ -93,59 +96,59 @@ public class WebServer implements Container {
             return;
         }
 
-        System.out.println("Got request for email " + emailToNotify + " url " + urlToMonitor);
+        // The request is valid, let's make sure the website is reachable.
+        int contentHash;
+        try
+        {
+            String content = WebsiteFetcher.FetchContent(urlToMonitor);
+            contentHash = content.hashCode();
+        }
+        catch (IOException ex)
+        {
+            // Not quite sure which error code to set here. Their URL could be bad,
+            // or the site could be temporarily unavailable. We could probably forward
+            // more error information from the website fetch... The http error code if
+            // it was an http error...
+            // This is an expected error, so nothing to log about. Although a flurry of
+            // network unavailables would be indiciative of a problem on our side...
+            response.setStatus(Status.SERVICE_UNAVAILABLE);
+            body.close();
+            return;
+        }
 
         try {
-            PostTask(emailToNotify, urlToMonitor);
+            RegisterTask(emailToNotify, urlToMonitor, contentHash);
         } catch (IOException e) {
-            // Think about this more...
-            e.printStackTrace();
+            // It'd be reasonable to crash here if we had a process monitor that would
+            // reboot us. Startup would reconnect to rabbit, which is about the only
+            // option that we have.
+            log.error("Error registering task with rabbitMq");
+            response.setStatus(Status.INTERNAL_SERVER_ERROR);
+            body.close();
+            return;
         }
+
+        NotifyWatchRegistered(emailToNotify, urlToMonitor);
 
         response.setStatus(Status.OK);
         body.close();
     }
 
-    public void PostTask(String listenerEmail, String websiteUrl) throws IOException {
-        // Fetch the website: we want the original content hash, and we want to
-        // verify the site is actually reachable.
-        int contentHash;
-        try
-        {
-            System.out.println("Fetching website");
-            String content = WebsiteFetcher.FetchContent(websiteUrl);
-            contentHash = content.hashCode();
-        }
-        catch (IOException ex)
-        {
-            // If the website was unreachable for any reason we'll inform the caller
-            // of the failure and not schedule the task. We only want to monitor valid
-            // websites.
-
-            System.out.println("Sending error email");
-            String errorSubject = "Could not monitor website";
-            String errorMessage =
-                    String.format("We were unable to create a watch on website %1$s as we received error %2$s",
-                    websiteUrl, ex.toString());
-            mailer.SendMail(listenerEmail, errorSubject, errorMessage);
-            return;
-        }
-
-        // Send an email: we want to verify the email address is actually valid.
-
+    private void NotifyWatchRegistered(String email, String websiteUrl)
+    {
         System.out.println("Sending success email");
         String successSubject = "Watch registered";
         String successMessage = String.format("Successfully registered a watch on website %1$s", websiteUrl);
-        mailer.SendMail(listenerEmail, successSubject, successMessage);
+        mailer.SendMail(email, successSubject, successMessage);
+    }
 
-        // The website exists and is accessible, the email of the listener is good;
-        // let's schedule the actual task now.
-        System.out.println("Posting task");
+    private void RegisterTask(String email, String websiteuUrl, int contentHash)
+            throws IOException {
         Task task = new Task();
         task.LastContentHash = contentHash;
-        task.ListenerEmail = listenerEmail;
-        task.WebsiteUrl = websiteUrl;
-        task.TimeToLive = 5;
-        rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000);
+        task.ListenerEmail = email;
+        task.WebsiteUrl = websiteuUrl;
+        task.TimeToLive = 5; // Could parameterize the TTL
+        rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000); // Could parameterize the poll period
     }
 }
