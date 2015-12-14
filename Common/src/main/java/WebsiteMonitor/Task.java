@@ -5,7 +5,7 @@ package WebsiteMonitor;
 // consume, update, and re-queue them.
 public class Task {
     public String ListenerEmail;
-    public String WebsiteeUrl;
+    public String WebsiteUrl;
     public int LastContentHash;
     public int TimeToLive;
 }

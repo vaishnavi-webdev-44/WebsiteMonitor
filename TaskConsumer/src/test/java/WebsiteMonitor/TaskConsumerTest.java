@@ -24,7 +24,7 @@ public class TaskConsumerTest {
         RabbitPublisher rabbitPublisher = new RabbitPublisher(
                 config.RabbitHostName, config.QueueName, config.ExchangeName);
         Task task = new Task();
-        task.WebsiteeUrl = "https://www.wikipedia.org/";
+        task.WebsiteUrl = "https://www.wikipedia.org/";
         task.ListenerEmail = "coding.challenge.2015@gmail.com";
         task.LastContentHash = 42;
         task.TimeToLive = 5;

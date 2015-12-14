@@ -40,7 +40,7 @@ public class WebServerTest {
     public void TestQueueTask()
     {
         Task task = new Task();
-        task.WebsiteeUrl = "foo";
+        task.WebsiteUrl = "foo";
         task.ListenerEmail = "email";
         task.LastContentHash = 42;
 

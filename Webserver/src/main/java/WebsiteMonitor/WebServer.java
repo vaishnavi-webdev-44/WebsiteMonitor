@@ -21,20 +21,13 @@ import com.rabbitmq.client.Channel;
 public class WebServer {
 
     private Mailer mailer;
-    private Channel rabbitChannel;
-    private String rabbitQueueName;
+    private RabbitPublisher rabbitPublisher;
     private HttpServer server;
 
     public WebServer(Config config) throws IOException, TimeoutException
     {
         mailer = new Mailer(config.MailerEmail, config.MailerPassword);
-
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(config.RabbitHostName);
-        Connection connection = factory.newConnection();
-        rabbitChannel = connection.createChannel();
-        rabbitChannel.queueDeclare(config.QueueName, false, false, false, null);
-        rabbitQueueName = config.QueueName;
+        rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
 
         server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/watch_and_notify", new MyHandler());
@@ -51,6 +44,12 @@ public class WebServer {
 //        @Override
         public void handle(HttpExchange t) throws IOException {
             // Need to validate the request is a POST. That's the only verb we accept.
+            // Need to extract the parameters from the request.
+            //
+            // Wow. How is it that implementing http servers in java is such a chore?
+            // Manual parameter parsing from the URI?
+            // Every code sample I've found for implementing a simple "Get a post,
+            // get some parameters" has been 200ish lines of code. No way.
             String response = "This is the response";
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
@@ -59,8 +58,7 @@ public class WebServer {
         }
     }
 
-    public void PostTask(String listenerEmail, String websiteUrl)
-    {
+    public void PostTask(String listenerEmail, String websiteUrl) throws IOException {
         // Fetch the website: we want the original content hash, and we want to
         // verify the site is actually reachable.
         int contentHash;
@@ -76,15 +74,15 @@ public class WebServer {
             // websites.
             String errorSubject = "Could not monitor website";
             String errorMessage =
-                    String.format("We were unable to create a watch on website %1 as we received error %2",
-                    listenerEmail, ex.toString());
+                    String.format("We were unable to create a watch on website %1$s as we received error %2$s",
+                    websiteUrl, ex.toString());
             mailer.SendMail(listenerEmail, errorSubject, errorMessage);
             return;
         }
 
         // Send an email: we want to verify the email address is actually valid.
-        String successSubject = String.format("Watch registered");
-        String successMessage = String.format("Successfully registered a watch on website %1", websiteUrl);
+        String successSubject = "Watch registered";
+        String successMessage = String.format("Successfully registered a watch on website %1$s", websiteUrl);
         mailer.SendMail(listenerEmail, successSubject, successMessage);
 
         // The website exists and is accessible, the email of the listener is good;
@@ -92,20 +90,8 @@ public class WebServer {
         Task task = new Task();
         task.LastContentHash = contentHash;
         task.ListenerEmail = listenerEmail;
-        task.WebsiteeUrl = websiteUrl;
-    }
-
-    public void EnqueueTask(Task task)
-    {
-        Gson gson = new Gson();
-        String taskAsJson = gson.toJson(task);
-        try {
-            rabbitChannel.basicPublish("", rabbitQueueName, null, taskAsJson.getBytes());
-        }
-        catch (IOException ex)
-        {
-            System.out.print("Wut?");
-        }
-        System.out.println(" Message sent");
+        task.WebsiteUrl = websiteUrl;
+        task.TimeToLive = 5;
+        rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000);
     }
 }

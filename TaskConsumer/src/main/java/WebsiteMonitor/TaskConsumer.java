@@ -57,7 +57,8 @@ public class TaskConsumer implements Consumer {
 
     public void handleRecoverOk(String s) { }
 
-    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
+            throws IOException {
         String taskBytes = new String(body, "UTF-8");
         Task task = gson.fromJson(taskBytes, Task.class);
         System.out.println("Processing task" + taskBytes);
@@ -67,7 +68,7 @@ public class TaskConsumer implements Consumer {
         int contentHash = task.LastContentHash;
         try
         {
-            String content = WebsiteFetcher.FetchContent(task.WebsiteeUrl);
+            String content = WebsiteFetcher.FetchContent(task.WebsiteUrl);
             contentHash = content.hashCode();
             System.out.println("Succesfully fetched website, content hash: " + contentHash);
             task.TimeToLive = 5;
@@ -83,7 +84,7 @@ public class TaskConsumer implements Consumer {
                         "After repeated attempts we were unable to fetch content from %1$s. "
                         + "We have cancelled the monitoring of it. Please re-submit the job "
                         + "if the website is functioning again and you wish to resume the watch.",
-                        task.WebsiteeUrl);
+                        task.WebsiteUrl);
                 mailer.SendMail(task.ListenerEmail, errorSubject, errorMessage);
                 // Note we're not re-queue'ing the task.
                 return;
@@ -98,7 +99,7 @@ public class TaskConsumer implements Consumer {
             String subject = "Website content has changed";
             String message = String.format(
                     "Dear %1$s, we have detected a change in content of website %2$s.",
-                    task.ListenerEmail, task.WebsiteeUrl);
+                    task.ListenerEmail, task.WebsiteUrl);
             mailer.SendMail(task.ListenerEmail, subject, message);
         }
 

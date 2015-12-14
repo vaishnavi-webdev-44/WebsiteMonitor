@@ -23,7 +23,7 @@ public class RabbitPublisherTest {
         Task task = new Task();
         task.LastContentHash = 1;
         task.ListenerEmail = "foo@foo.com";
-        task.WebsiteeUrl = "somewhere";
+        task.WebsiteUrl = "somewhere";
 
         RabbitPublisher rabbitPublisher = new RabbitPublisher("localhost", "TEST_QUEUE", "TEST_EXCHANGE");
         rabbitPublisher.EnqueueTask(task, delayMs);
