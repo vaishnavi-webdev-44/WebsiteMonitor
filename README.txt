@@ -95,3 +95,9 @@ Scalability and future extensions:
     that. And on the persistence note, that lack of atomic task swap with rabbit irks
     me even more, as it's possible to lose jobs through that. That feels even worse
     once you expect jobs to persist across system restarts.
+
+Security:
+    I put a password in a source file for an email account for testing. Then I thought;
+    oh I'll put it in a config file, and not distribute the config file. Then I remembered;
+    it's now in source history even if I delete the head revision of the file. Obviously.
+    Oops. Well I guess I'll just leave it there... one less thing to set up to run it...
