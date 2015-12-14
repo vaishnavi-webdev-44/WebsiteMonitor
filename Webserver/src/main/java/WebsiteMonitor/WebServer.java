@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.log4j.Logger;
 import org.simpleframework.http.Query;
@@ -92,7 +91,6 @@ public class WebServer implements Container {
         if (urlToMonitor == null || emailToNotify == null)
         {
             response.setStatus(Status.BAD_REQUEST);
-//            body.println("Required parameters: urlToMonitor, emailToNotify");
             body.close();
             return;
         }

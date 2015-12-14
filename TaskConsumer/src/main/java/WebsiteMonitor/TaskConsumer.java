@@ -25,7 +25,7 @@ public class TaskConsumer implements Consumer {
             // Looks like there's a blocking rabbit connection, but then I'd need
             // to be able to configure that within my publisher... it's an option...
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 return;
             }
@@ -46,7 +46,6 @@ public class TaskConsumer implements Consumer {
             throws IOException {
         String taskBytes = new String(body, "UTF-8");
         Task task = gson.fromJson(taskBytes, Task.class);
-        System.out.println("Processing task" + taskBytes);
 
         // Set the current hash = last hash, so that if we fail to fetch the content
         // and we haven't hit TTL = 0, we treat this as no-change.
@@ -55,12 +54,10 @@ public class TaskConsumer implements Consumer {
         {
             String content = WebsiteFetcher.FetchContent(task.WebsiteUrl);
             contentHash = content.hashCode();
-            System.out.println("Succesfully fetched website, content hash: " + contentHash);
             task.TimeToLive = 5;
         }
         catch (IOException ex)
         {
-            System.out.println("Failed to fetch site content, error" + ex);
             --task.TimeToLive;
             if (task.TimeToLive == 0)
             {
@@ -80,7 +77,6 @@ public class TaskConsumer implements Consumer {
 
         if (contentHash != task.LastContentHash)
         {
-            System.out.println("Change detected");
             String subject = "Website content has changed";
             String message = String.format(
                     "Dear %1$s, we have detected a change in content of website %2$s.",
@@ -89,7 +85,7 @@ public class TaskConsumer implements Consumer {
         }
 
         task.LastContentHash = contentHash;
-        rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000);
+        rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000); // Could make the period configurable
 
         // NOTE! There is a concerning race right here, after enqueue'ing the next iteration
         // of the monitor task and before the closing brace, where the function will end, rabbit

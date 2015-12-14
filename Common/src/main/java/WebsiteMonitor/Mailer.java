@@ -58,13 +58,10 @@ public class Mailer implements MailerInterface {
 
             Transport.send(message);
         } catch (MessagingException e) {
-            // Need better error handling here; I wonder what level of information
-            // we have here? Has this waited for the response from the mail server?
-            // Does it include failed delivery information? That would be really
-            // handy if it did.
-
-            // I think we can throw a bad address exception and meaningfully handle that
-            // Everything else appears fatal to me.
+            // The level of information we have in this error is pretty vague.
+            // Some reading tells me that at best we can verify that the mail
+            // was delivered to google's server, but nothing about if the
+            // mail was actually delivered or the email address exists.
             throw new RuntimeException(e);
         }
     }

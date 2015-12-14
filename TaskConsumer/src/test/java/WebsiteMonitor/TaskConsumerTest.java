@@ -98,6 +98,8 @@ public class TaskConsumerTest {
         task.LastContentHash = lastPostedTask.LastContentHash;
         lastPostedTask = null;
 
+        // Republish the task but with the last known hash; the task should be requeued and
+        // no email should be sent.
         rabbitPublisher.EnqueueTask(task, 0);
 
         startTime = System.currentTimeMillis();

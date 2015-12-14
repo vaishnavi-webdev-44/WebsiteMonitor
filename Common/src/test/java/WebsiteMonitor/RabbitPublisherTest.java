@@ -39,7 +39,6 @@ public class RabbitPublisherTest {
                 Task receivedTask = gson.fromJson(message, Task.class);
                 assert receivedTask.LastContentHash == 1;
                 --bufferedMessages;
-                System.out.println(body.toString());
             }
         };
         rabbitPublisher.GetChannel().basicConsume(
