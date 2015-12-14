@@ -11,23 +11,9 @@ public class TaskConsumer implements Consumer {
     private RabbitPublisherInterface rabbitPublisher;
     private Gson gson = new Gson();
 
-    // For testing purposes we'll track if we've ever consumed any messages.
-    // This allows us to easily write tests that consume one message.
-    private static Boolean hasConsumedMessages = false;
-
     public TaskConsumer(MailerInterface newMailer, RabbitPublisherInterface newPublisher) {
         mailer = newMailer;
         rabbitPublisher = newPublisher;
-    }
-
-    public void ConsumeOneMessage() throws IOException, InterruptedException {
-        hasConsumedMessages = false;
-        rabbitPublisher.GetChannel().basicConsume(
-                rabbitPublisher.RabbitQueueName(), true, this);
-        while (hasConsumedMessages == false)
-        {
-            Thread.sleep(100);
-        }
     }
 
     public void RunForever() throws IOException {
@@ -104,8 +90,6 @@ public class TaskConsumer implements Consumer {
 
         task.LastContentHash = contentHash;
         rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000);
-
-        hasConsumedMessages = true;
 
         // NOTE! There is a concerning race right here, after enqueue'ing the next iteration
         // of the monitor task and before the closing brace, where the function will end, rabbit

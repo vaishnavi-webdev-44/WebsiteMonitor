@@ -28,7 +28,7 @@ public class RabbitPublisherTest {
         RabbitPublisher rabbitPublisher = new RabbitPublisher("localhost", "TEST_QUEUE", "TEST_EXCHANGE");
         rabbitPublisher.EnqueueTask(task, delayMs);
         ++bufferedMessages;
-        Consumer consumer = new DefaultConsumer(rabbitPublisher.rabbitChannel) {
+        Consumer consumer = new DefaultConsumer(rabbitPublisher.GetChannel()) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
                     throws IOException {
@@ -42,7 +42,7 @@ public class RabbitPublisherTest {
                 System.out.println(body.toString());
             }
         };
-        rabbitPublisher.rabbitChannel.basicConsume(
+        rabbitPublisher.GetChannel().basicConsume(
                 rabbitPublisher.RabbitQueueName(), true, consumer);
         while (bufferedMessages != 0)
         {

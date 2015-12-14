@@ -20,9 +20,9 @@ public class WebsiteFetcher
 {
         public static String FetchContent(String websiteUrl) throws IOException {
             // Query the target host
-            Connection connection = Jsoup.connect(websiteUrl);
             Document document = null;
             try {
+                Connection connection = Jsoup.connect(websiteUrl);
                 document = connection.get();
             } catch (SocketTimeoutException ex) {
                 // Transient error. Maybe the website is down, maybe our network is down.

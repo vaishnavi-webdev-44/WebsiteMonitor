@@ -13,7 +13,6 @@
         <module>Webserver</module>
         <module>TaskConsumer</module>
         <module>Common</module>
-        <module>TestModule</module>
     </modules>
 
 
