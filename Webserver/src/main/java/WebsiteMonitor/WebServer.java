@@ -65,8 +65,15 @@ public class WebServer implements Container {
         response.setDate("Date", time);
         response.setDate("Last-Modified", time);
 
-        // Is path what I'm looking for?
-        System.out.println("Got request for path: " + request.getPath());
+        // We only have one endpoint; normally we'd have a map of handlers, and
+        // no handler in the map would return forbidden.
+        if (!request.getPath().toString().equals("/monitor"))
+        {
+            System.out.println("Forbidden, path was " + request.getPath().toString());
+            response.setStatus(Status.FORBIDDEN);
+            body.close();
+            return;
+        }
 
         // Let's extract the parameters from the request and provide some meaningful
         // errors if it's not usable. I'm not great with java collection manipulation,
@@ -86,8 +93,7 @@ public class WebServer implements Container {
             return;
         }
 
-        response.setStatus(Status.OK);
-        body.close();
+        System.out.println("Got request for email " + emailToNotify + " url " + urlToMonitor);
 
         try {
             PostTask(emailToNotify, urlToMonitor);
@@ -95,6 +101,9 @@ public class WebServer implements Container {
             // Think about this more...
             e.printStackTrace();
         }
+
+        response.setStatus(Status.OK);
+        body.close();
     }
 
     public void PostTask(String listenerEmail, String websiteUrl) throws IOException {
@@ -103,6 +112,7 @@ public class WebServer implements Container {
         int contentHash;
         try
         {
+            System.out.println("Fetching website");
             String content = WebsiteFetcher.FetchContent(websiteUrl);
             contentHash = content.hashCode();
         }
@@ -111,6 +121,8 @@ public class WebServer implements Container {
             // If the website was unreachable for any reason we'll inform the caller
             // of the failure and not schedule the task. We only want to monitor valid
             // websites.
+
+            System.out.println("Sending error email");
             String errorSubject = "Could not monitor website";
             String errorMessage =
                     String.format("We were unable to create a watch on website %1$s as we received error %2$s",
@@ -120,12 +132,15 @@ public class WebServer implements Container {
         }
 
         // Send an email: we want to verify the email address is actually valid.
+
+        System.out.println("Sending success email");
         String successSubject = "Watch registered";
         String successMessage = String.format("Successfully registered a watch on website %1$s", websiteUrl);
         mailer.SendMail(listenerEmail, successSubject, successMessage);
 
         // The website exists and is accessible, the email of the listener is good;
         // let's schedule the actual task now.
+        System.out.println("Posting task");
         Task task = new Task();
         task.LastContentHash = contentHash;
         task.ListenerEmail = listenerEmail;
