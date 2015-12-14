@@ -22,5 +22,6 @@
     <orderEntry type="library" name="Maven: com.google.guava:guava-io:r03" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava-annotations:r03" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava-base:r03" level="project" />
+    <orderEntry type="library" name="Maven: org.simpleframework:simple:5.1.6" level="project" />
   </component>
 </module>

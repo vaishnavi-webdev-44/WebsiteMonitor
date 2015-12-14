@@ -33,7 +33,11 @@
             <artifactId>guava-io</artifactId>
             <version>r03</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.simpleframework</groupId>
+            <artifactId>simple</artifactId>
+            <version>5.1.6</version>
+        </dependency>
     </dependencies>
 
 </project>

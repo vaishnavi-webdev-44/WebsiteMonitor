@@ -4,57 +4,98 @@ package WebsiteMonitor;
 // http://stackoverflow.com/questions/3732109/simple-http-server-in-java-using-only-java-se-api
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-import com.google.gson.Gson;
+import org.simpleframework.http.Query;
+import org.simpleframework.http.Request;
+import org.simpleframework.http.Response;
+import org.simpleframework.http.Status;
+import org.simpleframework.http.core.Container;
+import org.simpleframework.http.core.ContainerServer;
+import org.simpleframework.transport.Server;
+import org.simpleframework.transport.connect.Connection;
+import org.simpleframework.transport.connect.SocketConnection;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Channel;
+// Reference:
+//     http://www.simpleframework.org/doc/tutorial/tutorial.php
+
 
 // A WebServer that implements a single POST endpoint; watch_and_notify
-public class WebServer {
+public class WebServer implements Container {
 
     private Mailer mailer;
     private RabbitPublisher rabbitPublisher;
-    private HttpServer server;
 
-    public WebServer(Config config) throws IOException, TimeoutException
+    public WebServer(Config config)
+            throws IOException, TimeoutException
     {
         mailer = new Mailer(config.MailerEmail, config.MailerPassword);
         rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
-
-        server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.createContext("/watch_and_notify", new MyHandler());
-        server.setExecutor(null); // creates a default executor
     }
 
-    public void StartServer()
-    {
-        server.start();
+    public void StartServer() throws IOException {
+        Server server = new ContainerServer(this);
+        Connection connection = new SocketConnection(server);
+        SocketAddress address = new InetSocketAddress(8080);
+
+        connection.connect(address);
     }
 
-    static class MyHandler implements HttpHandler {
-        // Override taken from code sample, intellij claims it's not allowed. Ok.
-//        @Override
-        public void handle(HttpExchange t) throws IOException {
-            // Need to validate the request is a POST. That's the only verb we accept.
-            // Need to extract the parameters from the request.
-            //
-            // Wow. How is it that implementing http servers in java is such a chore?
-            // Manual parameter parsing from the URI?
-            // Every code sample I've found for implementing a simple "Get a post,
-            // get some parameters" has been 200ish lines of code. No way.
-            String response = "This is the response";
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+    public void handle(Request request, Response response) {
+        PrintStream body;
+        try
+        {
+            body = response.getPrintStream();
+        }
+        catch (IOException ex)
+        {
+            // log error, how does this happen?
+            return;
+        }
+
+        // Following the pattern from this link:
+        //   http://www.simpleframework.org/doc/tutorial/tutorial.php
+        long time = System.currentTimeMillis();
+
+        response.setValue("Content-Type", "text/plain");
+        response.setValue("Server", "WebsiteMonitor");
+        response.setDate("Date", time);
+        response.setDate("Last-Modified", time);
+
+        // Is path what I'm looking for?
+        System.out.println("Got request for path: " + request.getPath());
+
+        // Let's extract the parameters from the request and provide some meaningful
+        // errors if it's not usable. I'm not great with java collection manipulation,
+        // but if I was in C# I would do some kind of filter to find the  missing
+        // elements of the request parameters so I could easily call them out
+        // in the response. I'll keep it simple here.
+        Query query = request.getQuery();
+
+        String urlToMonitor = query.get("urlToMonitor");
+        String emailToNotify = query.get("emailToNotify");
+
+        if (urlToMonitor == null || emailToNotify == null)
+        {
+            response.setStatus(Status.BAD_REQUEST);
+            body.println("Required parameters: urlToMonitor, emailToNotify");
+            body.close();
+            return;
+        }
+
+        response.setStatus(Status.OK);
+        body.close();
+
+        try {
+            PostTask(emailToNotify, urlToMonitor);
+        } catch (IOException e) {
+            // Think about this more...
+            e.printStackTrace();
         }
     }
 
