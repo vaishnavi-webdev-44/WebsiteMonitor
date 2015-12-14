@@ -4,6 +4,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.rabbitmq.client.Channel;
 import org.junit.Test;
 import org.simpleframework.http.Status;
 import java.io.IOException;
@@ -24,6 +25,16 @@ public class WebServerTest {
     };
 
     private RabbitPublisherInterface mockPublisher = new RabbitPublisherInterface() {
+        @Override
+        public String RabbitQueueName() {
+            return null;
+        }
+
+        @Override
+        public Channel GetChannel() {
+            return null;
+        }
+
         @Override
         public void EnqueueTask(Task task, long taskDelayMs) throws IOException {
             taskScheduled = true;

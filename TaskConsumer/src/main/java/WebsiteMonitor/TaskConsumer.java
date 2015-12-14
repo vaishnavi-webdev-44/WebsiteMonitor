@@ -4,26 +4,25 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 public class TaskConsumer implements Consumer {
 
-    private Mailer mailer;
-    private RabbitPublisher rabbitPublisher;
+    private MailerInterface mailer;
+    private RabbitPublisherInterface rabbitPublisher;
     private Gson gson = new Gson();
 
     // For testing purposes we'll track if we've ever consumed any messages.
     // This allows us to easily write tests that consume one message.
     private static Boolean hasConsumedMessages = false;
 
-    public TaskConsumer(Config config) throws IOException, TimeoutException {
-        mailer = new Mailer(config.MailerEmail, config.MailerPassword);
-        rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
+    public TaskConsumer(MailerInterface newMailer, RabbitPublisherInterface newPublisher) {
+        mailer = newMailer;
+        rabbitPublisher = newPublisher;
     }
 
     public void ConsumeOneMessage() throws IOException, InterruptedException {
         hasConsumedMessages = false;
-        rabbitPublisher.rabbitChannel.basicConsume(
+        rabbitPublisher.GetChannel().basicConsume(
                 rabbitPublisher.RabbitQueueName(), true, this);
         while (hasConsumedMessages == false)
         {
@@ -32,7 +31,7 @@ public class TaskConsumer implements Consumer {
     }
 
     public void RunForever() throws IOException {
-        rabbitPublisher.rabbitChannel.basicConsume(
+        rabbitPublisher.GetChannel().basicConsume(
                 rabbitPublisher.RabbitQueueName(), true, this);
         while (true)
         {

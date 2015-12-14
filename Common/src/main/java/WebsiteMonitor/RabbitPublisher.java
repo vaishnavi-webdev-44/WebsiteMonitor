@@ -13,14 +13,12 @@ import com.rabbitmq.client.*;
 // https://www.rabbitmq.com/blog/2015/04/16/scheduling-messages-with-rabbitmq/
 public class RabbitPublisher implements RabbitPublisherInterface {
 
-    // The channel object is needed for the constructor of rabbit consumers. We therefore
-    // need access to it from outside the class.
-    public Channel rabbitChannel;
-
+    private Channel rabbitChannel;
     private String rabbitQueueName;
     private String rabbitExchangeName;
 
     public String RabbitQueueName() { return rabbitQueueName; }
+    public Channel GetChannel() { return rabbitChannel; }
 
     public RabbitPublisher(String hostName, String queueName, String exchangeName)
             throws IOException, TimeoutException {
