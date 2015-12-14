@@ -47,10 +47,8 @@ public class Mailer {
                 });
     }
 
-    // Will need to parameterize this a bit later
     public void SendMail(String email, String subject, String content) {
         try {
-
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(email));
             message.setRecipients(Message.RecipientType.TO,
@@ -64,6 +62,9 @@ public class Mailer {
             // we have here? Has this waited for the response from the mail server?
             // Does it include failed delivery information? That would be really
             // handy if it did.
+
+            // I think we can throw a bad address exception and meaningfully handle that
+            // Everything else appears fatal to me.
             throw new RuntimeException(e);
         }
     }

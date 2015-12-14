@@ -1,71 +1,100 @@
 package WebsiteMonitor;
 
+import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+public class TaskConsumer implements Consumer {
 
-public class TaskConsumer {
+    private Mailer mailer;
+    private RabbitPublisher rabbitPublisher;
+    private Gson gson = new Gson();
 
-    private final static String QUEUE_NAME = "TEST_QUEUE";
+    public TaskConsumer(Config config) throws IOException, TimeoutException {
+        mailer = new Mailer(config.MailerEmail, config.MailerPassword);
+        rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
+    }
 
-    public static void main(String[] argv)
-            throws java.io.IOException, java.lang.InterruptedException, TimeoutException {
-
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
-        Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
-
-        channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
-        // ... ? Suggested pattern for sleeping while consuming messages?
-
-        Consumer consumer = new DefaultConsumer(channel) {
-            @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
-                    throws IOException {
-                String message = new String(body, "UTF-8");
-                System.out.println(" [x] Received '" + message + "'");
+    public void Run() throws IOException {
+        rabbitPublisher.rabbitChannel.basicConsume(
+                rabbitPublisher.RabbitQueueName(), true, this);
+        while (true)
+        {
+            // More elegant way to wait and consume messages indefinitely?
+            // Looks like there's a blocking rabbit connection, but then I'd need
+            // to be able to configure that within my publisher... it's an option...
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                return;
             }
-        };
-        channel.basicConsume(QUEUE_NAME, true, consumer);
+        }
     }
 
-    // My inputs are:
-    // Hash of last webpage content
-    // Email address of listener to inform
-    // Potentially a TTL?
-    public void ProcessTask(String url, int lastHash, String listenerEmail) {
-//        String content = null;
-//        try {
-//            content = FetchContent(url);
-//        } catch (IOException ex) {
-//            // Mailer.SendMail(listenerEmail, "I'm sorry but it's dead Jim.");
-//        }
-//
-//        // Set the hashes equal if we had an intermittent error; this makes it a no-op.
-//        // We don't return because we need to reschedule.
-//        int newHash = lastHash;
-//        if (content != null) {
-//            newHash = content.hashCode();
-//        }
-//
-//        // lastHash = 0 => we have never queried before, we don't know the content...
-//        // although...
-//        // in the http service we could query immediately, to ensure the website
-//        // exists, is reachable, and to get a starting hash. Ok, I like that.
-//        if (newHash != lastHash && lastHash != 0) {
-//            // We've detected a change
-//        }
-//
-//        ScheduleTask(url, newHash, listenerEmail);
-    }
+    public void handleConsumeOk(String s) { }
 
-    private void ScheduleTask(String url, int lastHash, String listenerEmail)
-    {
+    public void handleCancelOk(String s) { }
 
+    public void handleCancel(String reason) { }
+
+    public void handleShutdownSignal(String s, ShutdownSignalException e) { }
+
+    public void handleRecoverOk(String s) { }
+
+    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+        Task task = gson.fromJson(body.toString(), Task.class);
+
+        // Set the current hash = last hash, so that if we fail to fetch the content
+        // and we haven't hit TTL = 0, we treat this as no-change.
+        int contentHash = task.LastContentHash;
+        try
+        {
+            String content = WebsiteFetcher.FetchContent(task.WebsiteeUrl);
+            contentHash = content.hashCode();
+            task.TimeToLive = 5;
+        }
+        catch (IOException ex)
+        {
+            --task.TimeToLive;
+            if (task.TimeToLive == 0)
+            {
+                String errorSubject = "Website watch cancelled";
+                String errorMessage = String.format(
+                        "After repeated attempts we were unable to fetch content from %1. "
+                        + "We have cancelled the monitoring of it. Please re-submit the job "
+                        + "if the website is functioning again and you wish to resume the watch.",
+                        task.WebsiteeUrl);
+                mailer.SendMail(task.ListenerEmail, errorSubject, errorMessage);
+                // Note we're not re-queue'ing the task.
+                return;
+            }
+            // Potentially log here - this is expected behavior, which is why I hesitate, but
+            // a flurry of such messages would indicate network errors on our side.
+        }
+
+        if (contentHash != task.LastContentHash)
+        {
+            String subject = "Website content has changed";
+            String message = String.format(
+                    "Dear %1, we have detected a change in content of website %2.",
+                    task.ListenerEmail, task.WebsiteeUrl);
+            mailer.SendMail(task.ListenerEmail, subject, message);
+        }
+
+        task.LastContentHash = contentHash;
+        rabbitPublisher.EnqueueTask(task, 5 * 60 * 1000);
+
+        // NOTE! There is a concerning race right here, after enqueue'ing the next iteration
+        // of the monitor task and before the closing brace, where the function will end, rabbit
+        // will consider the task complete, and remove it from the queue. If the process were
+        // to crash after placing the next scheduled iteration of the job on the queue and before
+        // it removed the current job, we would end up with 2 tasks in the queue for the same
+        // job. You'd start getting double notifications about the website content changing.
+        //
+        // Sadly without an atomic method from rabbit to remove the task from the queue and
+        // put a new one in, the solutions become non-trivial.
     }
 
 }

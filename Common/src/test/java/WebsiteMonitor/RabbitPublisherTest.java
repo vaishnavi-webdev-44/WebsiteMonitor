@@ -24,7 +24,7 @@ public class RabbitPublisherTest {
         task.ListenerEmail = "foo@foo.com";
         task.WebsiteeUrl = "somewhere";
 
-        RabbitPublisher rabbitPublisher = new RabbitPublisher("localhost", "TEST_QUEUE");
+        RabbitPublisher rabbitPublisher = new RabbitPublisher("localhost", "TEST_QUEUE", "TEST_EXCHANGE");
         rabbitPublisher.EnqueueTask(task, delayMs);
         ++bufferedMessages;
         Consumer consumer = new DefaultConsumer(rabbitPublisher.rabbitChannel) {

@@ -7,4 +7,5 @@ public class Task {
     public String ListenerEmail;
     public String WebsiteeUrl;
     public int LastContentHash;
+    public int TimeToLive;
 }
