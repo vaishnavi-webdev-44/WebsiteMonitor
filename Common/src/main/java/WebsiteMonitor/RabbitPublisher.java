@@ -11,7 +11,7 @@ import com.rabbitmq.client.*;
 // The following method uses the RabbitMQ tutorials for code snippets.
 // https://www.rabbitmq.com/tutorials/tutorial-one-java.html
 // https://www.rabbitmq.com/blog/2015/04/16/scheduling-messages-with-rabbitmq/
-public class RabbitPublisher {
+public class RabbitPublisher implements RabbitPublisherInterface {
 
     // The channel object is needed for the constructor of rabbit consumers. We therefore
     // need access to it from outside the class.

@@ -24,7 +24,7 @@ import javax.mail.internet.MimeMessage;
 // example from here:
 //     http://www.mkyong.com/java/javamail-api-sending-email-via-gmail-smtp-example/
 
-public class Mailer {
+public class Mailer implements MailerInterface {
 
     private Session session;
 

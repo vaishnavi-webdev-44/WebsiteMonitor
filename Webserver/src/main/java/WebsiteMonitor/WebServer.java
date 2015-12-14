@@ -20,18 +20,19 @@ import org.simpleframework.transport.connect.SocketConnection;
 // Reference:
 //     http://www.simpleframework.org/doc/tutorial/tutorial.php
 
-// A WebServer that implements a single POST endpoint; watch_and_notify
+// A WebServer that implements a single POST endpoint; monitor
 public class WebServer implements Container {
 
-    private Mailer mailer;
-    private RabbitPublisher rabbitPublisher;
+    private MailerInterface mailer;
+    private RabbitPublisherInterface rabbitPublisher;
     private Logger log = Logger.getLogger(this.getClass().getName());
 
-    public WebServer(WebsiteMonitor.Config config)
-            throws IOException, TimeoutException
+    public WebServer(
+            MailerInterface newMailer,
+            RabbitPublisherInterface newPublisher)
     {
-        mailer = new WebsiteMonitor.Mailer(config.MailerEmail, config.MailerPassword);
-        rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
+        mailer = newMailer;
+        rabbitPublisher = newPublisher;
     }
 
     public void StartServer() throws IOException {
@@ -91,7 +92,7 @@ public class WebServer implements Container {
         if (urlToMonitor == null || emailToNotify == null)
         {
             response.setStatus(Status.BAD_REQUEST);
-            body.println("Required parameters: urlToMonitor, emailToNotify");
+//            body.println("Required parameters: urlToMonitor, emailToNotify");
             body.close();
             return;
         }

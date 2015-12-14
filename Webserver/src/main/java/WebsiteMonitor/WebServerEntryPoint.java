@@ -16,7 +16,12 @@ public class WebServerEntryPoint {
         Gson gson = new Gson();
         Config config = gson.fromJson(text, Config.class);
 
-        WebServer webServer = new WebServer(config);
+        Mailer mailer =
+                new WebsiteMonitor.Mailer(config.MailerEmail, config.MailerPassword);
+        RabbitPublisher rabbitPublisher =
+                new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
+
+        WebServer webServer = new WebServer(mailer, rabbitPublisher);
         webServer.StartServer();
     }
 }
