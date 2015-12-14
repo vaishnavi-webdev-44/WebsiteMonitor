@@ -3,11 +3,9 @@ package WebsiteMonitor;
 // Basic webserver example copied from
 // http://stackoverflow.com/questions/3732109/simple-http-server-in-java-using-only-java-se-api
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import org.simpleframework.http.Query;
@@ -31,10 +29,10 @@ public class WebServer implements Container {
     private Mailer mailer;
     private RabbitPublisher rabbitPublisher;
 
-    public WebServer(Config config)
+    public WebServer(WebsiteMonitor.Config config)
             throws IOException, TimeoutException
     {
-        mailer = new Mailer(config.MailerEmail, config.MailerPassword);
+        mailer = new WebsiteMonitor.Mailer(config.MailerEmail, config.MailerPassword);
         rabbitPublisher = new RabbitPublisher(config.RabbitHostName, config.QueueName, config.ExchangeName);
     }
 
