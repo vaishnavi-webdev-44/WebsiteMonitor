@@ -1,5 +1,5 @@
 Build and test:
-    This project uses maven for dependencies, build, and testing. Mvn install
+    This project uses maven for dependencies, build and testing. Mvn install
     at the root module should compile all modules and execute all tests.
 
 Run instructions:
